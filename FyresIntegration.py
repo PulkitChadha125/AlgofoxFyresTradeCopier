@@ -1,6 +1,16 @@
 from fyers_apiv3 import fyersModel
 import webbrowser
-
+from datetime import datetime, timedelta, date
+from time import sleep
+import os
+import pyotp
+import requests
+import json
+import math
+import pytz
+from urllib.parse import parse_qs, urlparse
+import warnings
+import pandas as pd
 fyers=None
 def apiactivation(client_id,redirect_uri,response_type,state,secret_key,grant_type):
     appSession = fyersModel.SessionModel(client_id = client_id, redirect_uri = redirect_uri,response_type=response_type,state=state,secret_key=secret_key,grant_type=grant_type)
@@ -9,17 +19,7 @@ def apiactivation(client_id,redirect_uri,response_type,state,secret_key,grant_ty
     print("generateTokenUrl: ",generateTokenUrl)
 
 def automated_login(client_id,secret_key,FY_ID,TOTP_KEY,PIN,redirect_uri):
-    from datetime import datetime, timedelta, date
-    from time import sleep
-    import os
-    import pyotp
-    import requests
-    import json
-    import math
-    import pytz
-    from urllib.parse import parse_qs, urlparse
-    import warnings
-    import pandas as pd
+
     pd.set_option('display.max_columns', None)
     warnings.filterwarnings('ignore')
 

@@ -1,0 +1,1 @@
+ pyinstaller --onefile --hidden-import fyres_apiv3 main.py

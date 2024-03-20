@@ -7,7 +7,8 @@ import pyotp
 from Algofox import *
 from flask import Flask, render_template
 from urllib.parse import urlparse, parse_qs
-# Create the Flask application
+
+
 app = Flask(__name__)
 
 def get_all_detail_csv():
@@ -48,7 +49,7 @@ def delete_file_contents(file_path):
         print(f"Error: Failed to delete contents of {file_path}.")
 def get_api_credentials():
     credentials = {}
-
+    delete_file_contents("OrderLogs.txt")
     try:
         df = pd.read_csv('Credentials.csv')
         for index, row in df.iterrows():
@@ -84,7 +85,7 @@ processed_order_ids = set()
 loginresult=login_algpfox(username=username, password=password, role=role)
 
 if loginresult!=200:
-    delete_file_contents("OrderLogs.txt")
+
     print("Algofoz credential wrong, shutdown down Trde Copier, please provide correct details and run again otherwise program will not work correctly ...")
     time.sleep(10000)
 
@@ -146,7 +147,7 @@ def process_orders(orders):
             status="COMPLETE"
         else:
             # fix this before deleivery set status to unknown
-            status="COMPLETE"
+            status="NOTKNOWN"
 
         if (
                 status == 'COMPLETE'and

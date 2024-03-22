@@ -97,6 +97,7 @@ def check_orders():
     global processed_order_ids
 
     orders = FyresIntegration.get_orderbook()
+    print("orders: ",orders)
 
     for order in orders['orderBook']:
         order_id = order['id']
@@ -105,12 +106,13 @@ def check_orders():
             processed_order_ids.add(order_id)  # Add the order ID to the set
             timestamp = order['orderDateTime']
             transaction_type = order['side']
+            ex_sym = order['ex_sym']
             tradingsymbol = order['symbol']
             product = order['productType']
             quantity = order['qty']
             price = order['limitPrice']
             status = order['status']
-            log_message = f"{timestamp} Order for {transaction_type} {tradingsymbol} {product} for {quantity} Quantity is {status}, Exchange order Id {order_id}\n"
+            log_message = f"{timestamp} Order for {transaction_type} {ex_sym} {product} for {quantity} Quantity is {status}, Exchange order Id {order_id}\n"
 
             # Save the log message to a file named after the symbol
             filename = f"OrderLogs.txt"
@@ -129,6 +131,10 @@ def process_orders(orders):
     for order in orders['orderBook']:
         order_id = order['id']
         tradingsymbol = order['symbol']
+        ex_sym= order['ex_sym']
+        description=order['description']
+        words = description.split()  # Split the string into words
+        last_word = words[-1]  # Access the last word
         timestamp = datetime.strptime(order['orderDateTime'], '%d-%b-%Y %H:%M:%S')
         transaction_type = order['side']
         current_time = datetime.now()
@@ -153,24 +159,63 @@ def process_orders(orders):
                 status == 'COMPLETE'and
                 timestamp.hour == current_time.hour and
                 timestamp.minute == current_time.minute
-                and tradingsymbol in symbols
+                and ex_sym in symbols
         ):
             if order_id not in order_ids:
                 order_ids.add(order_id)  # Add the order ID to the set
-                print(f"{timestamp} Order executed @ {tradingsymbol}, Ordertype= {transaction}, Quantity= {quantity}, @ price {price} , order id : {order_id}")
+                if last_word == "FUT":
+                    if ex_sym == "NIFTY" or ex_sym == "BANKNIFTY":
+                        Segment = "FUTIDX"
+                    else:
+                        Segment = "FUTSTK"
+
+                elif last_word == "CE" or last_word == "PE":
+                    if ex_sym == "NIFTY" or ex_sym == "BANKNIFTY":
+                        Segment = "OPTIDX"
+                    else:
+                        Segment = "OPTSTK"
+
+                else:
+                    Segment = "EQ"
+                print(f"{timestamp} Order executed @ {ex_sym}, Ordertype= {transaction}, Quantity= {quantity}, @ price {price} , order id : {order_id}")
                 ssymbols = get_all_detail_csv()
                 netpositionresponce = FyresIntegration.get_position()
                 # print("netpositionresponce: ",netpositionresponce)
                 for symbol in ssymbols:
 
-                    if symbol['Symbol'] == tradingsymbol:
+                    if symbol['Symbol'] == ex_sym:
                         ExchangeSymbol = symbol['ExchangeSymbol']
                         StrategyTag = symbol['StrategyTag']
-                        Segment = symbol['Segment']
+                        # Segment = symbol['Segment']
                         product = symbol['ProductType']
-                        strike = symbol['STRIKE']
-                        contract = symbol['CONTRAC TYPE']
-                        expiery = symbol['EXPIERY']
+                        if Segment == "OPTIDX":
+                            # contract = symbol['CONTRAC TYPE']
+                            expiery = symbol['EXPIERY']
+                            words = description.split()
+                            second_last_word = words[-2]
+                            strike = second_last_word
+                            words = description.split()  # Split the string into words
+                            last_word = words[-1]
+                            contract=last_word
+
+                        if Segment == "FUTIDX":
+                            expiery = symbol['EXPIERY']
+
+                        if Segment == "FUTSTK":
+                            expiery = symbol['EXPIERY']
+
+                        if Segment == "OPTSTK":
+                            # contract = symbol['CONTRAC TYPE']
+                            expiery = symbol['EXPIERY']
+                            words = description.split()
+                            second_last_word = words[-2]
+                            strike = second_last_word
+                            words = description.split()  # Split the string into words
+                            last_word = words[-1]
+                            contract = last_word
+
+
+
 
                         for item in netpositionresponce['netPositions']:
                             if item['symbol'] == tradingsymbol:
